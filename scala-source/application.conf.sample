@@ -1,5 +1,13 @@
-api-key = "YOUR_API_KEY_HERE"
-api-host = "api.openai.com"
-api-endpoint = "/v1/engines/davinci-codex/completions"
-max-tokens = 100
-n = 1
+api_key = "YOUR_API_KEY_HERE"
+api_host = "api.openai.com"
+api_endpoint = "/v1/completions"
+model = "text-davinci-003"
+# "text-davinci-003
+# gpt-3.5-turbo-0301
+
+# upper limit on the number of tokens in the response
+max_tokens = 100
+# between 0 and 2
+temperature = 0
+# number of responses returned
+num_completions = 1

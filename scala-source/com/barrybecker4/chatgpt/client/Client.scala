@@ -15,39 +15,52 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 
+/**
+ * This can probably all be replaced with https://index.scala-lang.org/cequence-io/openai-scala-client
+ */
 object Client {
-
-
 
   def callChatGPT(prompt: String, config: Config): Future[String] = {
     implicit val system = ActorSystem()
 
-    val host = config.getString("api-host")
-    val endpoint = Path(config.getString("api-endpoint"))
-    val apiKey = config.getString("api-key")
-    val maxTokens = config.getInt("max-tokens")
-    val n = config.getInt("n")
-
-    val query = Query(
-      "prompt" -> prompt,
-      "max_tokens" -> maxTokens.toString,
-      "n" -> n.toString,
-      "stop" -> "\n",
-    )
-
-    val uri = Uri().withHost(host).withPath(endpoint).withQuery(query)
-
-    val request = HttpRequest(
-      method = POST,
-      uri = uri,
-      entity = HttpEntity(ContentTypes.`application/json`, s"""{"prompt": "$prompt"}""")
-    ).withHeaders(Accept(MediaRange(MediaTypes.`application/xml`)), Authorization(OAuth2BearerToken(apiKey)))
-
+    val request = getRequest(prompt, config)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(request)
 
     responseFuture.flatMap { response =>
       response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
     }.andThen { case _ => system.terminate() }
+  }
+
+  def getRequest(prompt: String, config: Config): HttpRequest = {
+    val apiKey = config.getString("api_key")
+    val query = Query()
+    val uri = getUri(query, config)
+    println("Query = " + query.toString)
+    val model = config.getString("model")
+    val max_tokens = config.getInt("max_tokens").toString
+    val temperature = config.getDouble("temperature").toString
+    val num_completions = config.getInt("num_completions").toString
+    val entity = HttpEntity(ContentTypes.`application/json`,
+      s"""{
+         |"prompt": "$prompt",
+         |"model": "$model",
+         |"max_tokens": $max_tokens,
+         |"temperature": $temperature,
+         |"n": $num_completions
+      }""".stripMargin)
+
+    HttpRequest(
+      method = POST,
+      uri = uri,
+      entity = entity
+    ).withHeaders(Accept(MediaRange(MediaTypes.`application/xml`)), Authorization(OAuth2BearerToken(apiKey)))
+  }
+
+  private def getUri(query: Query, config: Config): Uri = {
+    val host = config.getString("api_host")
+    val endpoint = Path(config.getString("api_endpoint"))
+    println("endpoint = " + endpoint.toString)
+    Uri().withScheme("https").withHost(host).withPath(endpoint).withQuery(query)
   }
 
   def main(args: Array[String]): Unit = {
