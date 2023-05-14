@@ -1,0 +1,5 @@
+api-key = "YOUR_API_KEY_HERE"
+api-host = "api.openai.com"
+api-endpoint = "/v1/engines/davinci-codex/completions"
+max-tokens = 100
+n = 1
