@@ -1,6 +1,5 @@
 package com.barrybecker4.chatgpt.client
 
-import com.typesafe.config.{Config, ConfigFactory}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, HttpResponse, MediaRange, MediaTypes, Uri}
@@ -20,10 +19,10 @@ import scala.util.{Failure, Success}
  */
 object Client {
 
-  def callChatGPT(prompt: String, config: Config): Future[String] = {
+  def callChatGPT(prompt: String): Future[String] = {
     implicit val system = ActorSystem()
 
-    val request = getRequest(prompt, config)
+    val request = getRequest(prompt)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(request)
 
     responseFuture.flatMap { response =>
@@ -31,23 +30,10 @@ object Client {
     }.andThen { case _ => system.terminate() }
   }
 
-  def getRequest(prompt: String, config: Config): HttpRequest = {
-    val apiKey = config.getString("api_key")
-    val query = Query()
-    val uri = getUri(query, config)
-    println("Query = " + query.toString)
-    val model = config.getString("model")
-    val max_tokens = config.getInt("max_tokens").toString
-    val temperature = config.getDouble("temperature").toString
-    val num_completions = config.getInt("num_completions").toString
-    val entity = HttpEntity(ContentTypes.`application/json`,
-      s"""{
-         |"prompt": "$prompt",
-         |"model": "$model",
-         |"max_tokens": $max_tokens,
-         |"temperature": $temperature,
-         |"n": $num_completions
-      }""".stripMargin)
+  def getRequest(prompt: String): HttpRequest = {
+    val apiKey = ChatGptConfig.getApiKey
+    val uri = getUri(Query())
+    val entity = ChatGptConfig.getParameters(prompt)
 
     HttpRequest(
       method = POST,
@@ -56,18 +42,17 @@ object Client {
     ).withHeaders(Accept(MediaRange(MediaTypes.`application/xml`)), Authorization(OAuth2BearerToken(apiKey)))
   }
 
-  private def getUri(query: Query, config: Config): Uri = {
-    val host = config.getString("api_host")
-    val endpoint = Path(config.getString("api_endpoint"))
+  private def getUri(query: Query): Uri = {
+    val host = ChatGptConfig.getApiHost
+    val endpoint = Path(ChatGptConfig.getApiEndpoint)
     println("endpoint = " + endpoint.toString)
     Uri().withScheme("https").withHost(host).withPath(endpoint).withQuery(query)
   }
 
   def main(args: Array[String]): Unit = {
     val prompt = "What is the meaning of life?"
-    val config = ConfigFactory.load()
 
-    callChatGPT(prompt, config).onComplete {
+    callChatGPT(prompt).onComplete {
       case Success(response) =>
         println(response)
       case Failure(ex) =>
