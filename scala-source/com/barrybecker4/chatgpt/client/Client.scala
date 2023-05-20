@@ -8,10 +8,13 @@ import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.{Accept, Authorization, OAuth2BearerToken}
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import com.barrybecker4.chatgpt.{ChatGptChoice, ChatGptResponse, Usage, Message}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import scala.language.implicitConversions
+import grapple.json.{*, given}
 
 
 /**
@@ -48,13 +51,40 @@ object Client {
     println("endpoint = " + endpoint.toString)
     Uri().withScheme("https").withHost(host).withPath(endpoint).withQuery(query)
   }
+  case class User(id: Int, name: String)
+
+
 
   def main(args: Array[String]): Unit = {
     val prompt = "What is the meaning of life?"
 
+    // Define how to convert JsonValue to User
+    given JsonInput[User] with
+      def read(json: JsonValue) = User(json("id"), json("name"))
+
+    given JsonInput[Usage] with
+      def read(json: JsonValue) = Usage(
+        json("prompt_tokens"), json("completion_tokens"), json("total_tokens")
+      )
+
+    given JsonInput[Message] with
+      def read(json: JsonValue) = Message(json("role"), json("content"))
+
+    given JsonInput[ChatGptChoice] with
+      def read(json: JsonValue) = ChatGptChoice(json("message"), json("finish_reason"), json("index"))
+
+    given JsonInput[ChatGptResponse] with
+      def read(json: JsonValue) = ChatGptResponse(
+        json("id"), json("object"), json("created"), json("model"), json("usage"), json("choices")
+      )
+
+    val jsonStr = Json.parse("""{ "id": 1000, "name": "lupita" }""")
+    println("jsonStr = " + jsonStr)
+
     callChatGPT(prompt).onComplete {
       case Success(response) =>
-        println(response)
+        val responseJson = Json.parse(response).as[ChatGptResponse]
+        println(responseJson.choices.head.message.content)
       case Failure(ex) =>
         println(ex)
     }

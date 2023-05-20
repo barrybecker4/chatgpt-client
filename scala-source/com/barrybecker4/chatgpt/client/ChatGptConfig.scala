@@ -15,12 +15,22 @@ object ChatGptConfig {
   def getTemperature: Double = config.getDouble("temperature")
   def getNumCompletions: Int = config.getInt("num_completions")
 
-  def getParameters(prompt: String): RequestEntity = HttpEntity(ContentTypes.`application/json`,
-    s"""{
-       |"prompt": "$prompt",
-       |"model": "$getModel",
-       |"max_tokens": $getMaxTokens,
-       |"temperature": $getTemperature,
-       |"n": $getNumCompletions
-    }""".stripMargin)
+  /**
+   * possible roles are system, user, or assistant.
+   * @param prompt the current text from user
+   * @return parameters to send to the chat request
+   */
+  def getParameters(prompt: String): RequestEntity =
+
+    HttpEntity(ContentTypes.`application/json`,
+      s"""{
+         |"model": "$getModel",
+         |"messages": [
+         |  {"role": "system", "content": "You are a helpful assistant." },
+         |  {"role": "user",   "content": "$prompt" }
+         |],
+         |"max_tokens": $getMaxTokens,
+         |"temperature": $getTemperature,
+         |"n": $getNumCompletions
+      }""".stripMargin)
 }

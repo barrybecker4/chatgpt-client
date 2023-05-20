@@ -35,6 +35,7 @@ dependencies {
     implementation 'com.typesafe.akka:akka-http_3:10.5.2'
     implementation 'com.typesafe.akka:akka-stream_3:2.8.2'
     implementation 'com.typesafe.akka:akka-stream_3:2.8.2'
+    implementation 'com.github.losizm:grapple_3:13.0.0'
 }
 
 // This allows publishing of this project library to Sonatype
