@@ -20,15 +20,12 @@ object ChatGptConfig {
    * @param prompt the current text from user
    * @return parameters to send to the chat request
    */
-  def getParameters(prompt: String): RequestEntity =
+  def getParameters(messages: String): RequestEntity =
 
     HttpEntity(ContentTypes.`application/json`,
       s"""{
          |"model": "$getModel",
-         |"messages": [
-         |  {"role": "system", "content": "You are a helpful assistant." },
-         |  {"role": "user",   "content": "$prompt" }
-         |],
+         |"messages": $messages,
          |"max_tokens": $getMaxTokens,
          |"temperature": $getTemperature,
          |"n": $getNumCompletions

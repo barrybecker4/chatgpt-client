@@ -23,11 +23,15 @@ import grapple.json.{ *, given }
  */
 class ChatClient {
 
+  private val chatHistory = new ChatHistory()
+
   def getResponse(prompt: String): Future[String] = {
     callChatGPT(prompt).transform {
       case Success(response) =>
         val responseJson = ChatGptResponse.parse(response)
-        Success(responseJson.choices.head.message.content)
+        val responseText = responseJson.choices.head.message.content
+        chatHistory.addAssistantMessage(responseText)
+        Success(responseText)
       case Failure(cause) => Failure(new IllegalStateException(cause))
     }
   }
@@ -41,13 +45,15 @@ class ChatClient {
     responseFuture.flatMap { response =>
       response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
     }
-    //.andThen { case _ => system.terminate() }
+    //.andThen { case _ => }
   }
 
   def getRequest(prompt: String): HttpRequest = {
     val apiKey = ChatGptConfig.getApiKey
     val uri = getUri(Query())
-    val entity = ChatGptConfig.getParameters(prompt)
+
+    chatHistory.addUserMessage(prompt)
+    val entity = ChatGptConfig.getParameters(chatHistory.toString())
 
     HttpRequest(
       method = POST,
@@ -65,7 +71,7 @@ class ChatClient {
 
 object ChatClient {
   def main(args: Array[String]): Unit = {
-    val prompt = "Why do you think that Asian americans do better academically than African Americans?"
+    val prompt = "What is the answer to life the universe and everything?"
 
     val chatClient = new ChatClient()
 

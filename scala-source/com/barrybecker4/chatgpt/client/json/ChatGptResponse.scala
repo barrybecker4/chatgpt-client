@@ -32,7 +32,14 @@ import grapple.json.{ *, given }
 case class ChatGptResponse(id: String, `object`: String, created: Long, model: String, usage: Usage, choices: Seq[ChatGptChoice])
 case class Usage(prompt_tokens: Int, completion_tokens: Int, total_tokens: Int)
 case class ChatGptChoice(message: Message, finish_reason: String, index: Int)
-case class Message(role: String, content: String)
+
+/**
+ * @param role one of system, user, assistant
+ * @param content some text. Usually a question or answer.
+ */
+case class Message(role: String, content: String) {
+  override def toString: String = s"""{ "role": "$role", "content": "$content" }"""
+}
 
 
 given JsonInput[ChatGptResponse] with
