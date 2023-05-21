@@ -17,7 +17,7 @@ group = 'com.barrybecker4'
 version = '1.8-SNAPSHOT'
 ext {
     archivesBaseName = 'bb4-project-template'
-    mainClass = 'com.barrybecker4.newpackage.HelloWorld'
+    mainClass = 'com.barrybecker4.chatgpt.client.ChatClient'
 }
 
 apply from: project.buildscript.classLoader.getResource('bb4.gradle').toURI()

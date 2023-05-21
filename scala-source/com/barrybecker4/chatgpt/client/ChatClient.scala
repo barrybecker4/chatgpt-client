@@ -8,21 +8,31 @@ import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.{Accept, Authorization, OAuth2BearerToken}
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.barrybecker4.chatgpt.{ChatGptChoice, ChatGptResponse, Usage, Message}
+import com.barrybecker4.chatgpt.client.json.{ChatGptChoice, ChatGptResponse, Message, Usage}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.language.implicitConversions
-import grapple.json.{*, given}
+import scala.concurrent.duration.{Duration, SECONDS}
+import grapple.json.{ *, given }
 
 
 /**
  * This can probably all be replaced with https://index.scala-lang.org/cequence-io/openai-scala-client
  */
-object Client {
+class ChatClient {
 
-  def callChatGPT(prompt: String): Future[String] = {
+  def getResponse(prompt: String): Future[String] = {
+    callChatGPT(prompt).transform {
+      case Success(response) =>
+        val responseJson = ChatGptResponse.parse(response)
+        Success(responseJson.choices.head.message.content)
+      case Failure(cause) => Failure(new IllegalStateException(cause))
+    }
+  }
+
+  private def callChatGPT(prompt: String): Future[String] = {
     implicit val system = ActorSystem()
 
     val request = getRequest(prompt)
@@ -30,7 +40,8 @@ object Client {
 
     responseFuture.flatMap { response =>
       response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-    }.andThen { case _ => system.terminate() }
+    }
+    //.andThen { case _ => system.terminate() }
   }
 
   def getRequest(prompt: String): HttpRequest = {
@@ -48,45 +59,19 @@ object Client {
   private def getUri(query: Query): Uri = {
     val host = ChatGptConfig.getApiHost
     val endpoint = Path(ChatGptConfig.getApiEndpoint)
-    println("endpoint = " + endpoint.toString)
     Uri().withScheme("https").withHost(host).withPath(endpoint).withQuery(query)
   }
-  case class User(id: Int, name: String)
+}
 
-
-
+object ChatClient {
   def main(args: Array[String]): Unit = {
-    val prompt = "What is the meaning of life?"
+    val prompt = "Why do you think that Asian americans do better academically than African Americans?"
 
-    // Define how to convert JsonValue to User
-    given JsonInput[User] with
-      def read(json: JsonValue) = User(json("id"), json("name"))
+    val chatClient = new ChatClient()
 
-    given JsonInput[Usage] with
-      def read(json: JsonValue) = Usage(
-        json("prompt_tokens"), json("completion_tokens"), json("total_tokens")
-      )
-
-    given JsonInput[Message] with
-      def read(json: JsonValue) = Message(json("role"), json("content"))
-
-    given JsonInput[ChatGptChoice] with
-      def read(json: JsonValue) = ChatGptChoice(json("message"), json("finish_reason"), json("index"))
-
-    given JsonInput[ChatGptResponse] with
-      def read(json: JsonValue) = ChatGptResponse(
-        json("id"), json("object"), json("created"), json("model"), json("usage"), json("choices")
-      )
-
-    val jsonStr = Json.parse("""{ "id": 1000, "name": "lupita" }""")
-    println("jsonStr = " + jsonStr)
-
-    callChatGPT(prompt).onComplete {
-      case Success(response) =>
-        val responseJson = Json.parse(response).as[ChatGptResponse]
-        println(responseJson.choices.head.message.content)
-      case Failure(ex) =>
-        println(ex)
+    chatClient.getResponse(prompt).onComplete {
+      case Success(response) => println(response)
+      case Failure(ex) => ex.printStackTrace()
     }
   }
 }
