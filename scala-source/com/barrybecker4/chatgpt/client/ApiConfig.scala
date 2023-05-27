@@ -1,11 +1,13 @@
 package com.barrybecker4.chatgpt.client
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity}
-import com.typesafe.config.ConfigFactory
+import com.barrybecker4.chatgpt.client.json.Personality
+import com.typesafe.config.{Config, ConfigFactory}
 
-object ChatGptConfig {
 
-  private val config = ConfigFactory.load()
+object ApiConfig {
+
+  private val config: Config = ConfigFactory.load("api")
 
   def getApiHost: String = config.getString("api_host")
   def getApiEndpoint: String = config.getString("api_endpoint")
@@ -15,6 +17,7 @@ object ChatGptConfig {
   def getTemperature: Double = config.getDouble("temperature")
   def getNumCompletions: Int = config.getInt("num_completions")
 
+
   /**
    * possible roles are system, user, or assistant.
    * @param prompt the current text from user
@@ -22,12 +25,15 @@ object ChatGptConfig {
    */
   def getParameters(messages: String): RequestEntity =
 
-    HttpEntity(ContentTypes.`application/json`,
+    val content =
       s"""{
          |"model": "$getModel",
          |"messages": $messages,
          |"max_tokens": $getMaxTokens,
          |"temperature": $getTemperature,
          |"n": $getNumCompletions
-      }""".stripMargin)
+    }""".stripMargin
+
+    //println("content = \n" + content)
+    HttpEntity(ContentTypes.`application/json`, content)
 }

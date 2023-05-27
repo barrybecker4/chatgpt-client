@@ -59,11 +59,12 @@ class ChatClient(chatHistory: ChatHistory) {
   }
 
   def getRequest(prompt: String): HttpRequest = {
-    val apiKey = ChatGptConfig.getApiKey
+    val apiKey = ApiConfig.getApiKey
     val uri = getUri(Query())
 
     chatHistory.addUserMessage(prompt)
-    val entity = ChatGptConfig.getParameters(chatHistory.toString())
+    
+    val entity = ApiConfig.getParameters(chatHistory.toString())
 
     HttpRequest(
       method = POST,
@@ -73,8 +74,8 @@ class ChatClient(chatHistory: ChatHistory) {
   }
 
   private def getUri(query: Query): Uri = {
-    val host = ChatGptConfig.getApiHost
-    val endpoint = Path(ChatGptConfig.getApiEndpoint)
+    val host = ApiConfig.getApiHost
+    val endpoint = Path(ApiConfig.getApiEndpoint)
     Uri().withScheme("https").withHost(host).withPath(endpoint).withQuery(query)
   }
 }

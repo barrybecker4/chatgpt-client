@@ -1,0 +1,14 @@
+{
+  "api_key": "<YOUR_API_KEY>",
+  "api_host": "api.openai.com",
+  "api_endpoint": "/v1/chat/completions",
+  "model": "gpt-3.5-turbo",
+  /* upper limit on the number of tokens in the response */
+  "max_tokens": 500,
+  /* between 0 and 2 */
+  "temperature": 0.1,
+  /* number of responses returned */
+  "num_completions": 1
+}
+
+
