@@ -23,6 +23,7 @@ import grapple.json.{*, given}
  */
 class ChatClient(chatHistory: ChatHistory) {
 
+  private var actorSystem: ActorSystem = _
 
   def getResponse(prompt: String): Future[String] = {
     callChatGPT(prompt).transform {
@@ -40,11 +41,14 @@ class ChatClient(chatHistory: ChatHistory) {
         Success(responseText)
       case Failure(cause) => Failure(new IllegalStateException(cause))
     }
-
   }
+
+  def terminate(): Unit =
+    if (actorSystem != null) actorSystem.terminate()
 
   private def callChatGPT(prompt: String): Future[String] = {
     implicit val system = ActorSystem()
+    actorSystem = system
 
     val request = getRequest(prompt)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(request)

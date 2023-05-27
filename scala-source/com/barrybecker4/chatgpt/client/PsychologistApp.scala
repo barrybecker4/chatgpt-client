@@ -11,7 +11,7 @@ object PsychologistApp {
 
     val chatClient = new ChatClient(new ChatHistory("You are a psychologist named Dr Eliza."))
 
-    println("I am a psychologist. What can I help you with?")
+    println("I am Dr. Eliza, a psychologist. What can I help you with?")
 
     var done = false
 
@@ -25,9 +25,10 @@ object PsychologistApp {
         }
       }
     }
+    chatClient.terminate()
   }
-  
-  private def isDone(content: String): Boolean = 
+
+  private def isDone(content: String): Boolean =
     content.isEmpty || content.contains("done") || content.contains("quit") || content.contains("exit")
-    
+
 }
