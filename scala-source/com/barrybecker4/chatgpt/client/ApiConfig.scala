@@ -24,16 +24,19 @@ object ApiConfig {
    * @return parameters to send to the chat request
    */
   def getParameters(messages: String): RequestEntity =
-
     val content =
       s"""{
          |"model": "$getModel",
-         |"messages": $messages,
+         |"messages": ${jsonEscape(messages)},
          |"max_tokens": $getMaxTokens,
          |"temperature": $getTemperature,
          |"n": $getNumCompletions
     }""".stripMargin
 
-    //println("content = \n" + content)
+    println("content = \n" + content)
     HttpEntity(ContentTypes.`application/json`, content)
+}
+
+def jsonEscape(str: String): String = {
+  str.replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r").replaceAll("\t", "\\\\t");
 }

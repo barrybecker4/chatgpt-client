@@ -33,7 +33,6 @@ object AiPersonalityApp {
     println(personality.greeting)
 
     var done = false
-
     while (!done) {
       val userContent = readLine()
       done = isDone(userContent)

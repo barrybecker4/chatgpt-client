@@ -63,7 +63,7 @@ class ChatClient(chatHistory: ChatHistory) {
     val uri = getUri(Query())
 
     chatHistory.addUserMessage(prompt)
-    
+
     val entity = ApiConfig.getParameters(chatHistory.toString())
 
     HttpRequest(
@@ -80,6 +80,7 @@ class ChatClient(chatHistory: ChatHistory) {
   }
 }
 
+// For simple testing
 object ChatClient {
   def main(args: Array[String]): Unit = {
     val prompt = "What is the answer to life the universe and everything?"
